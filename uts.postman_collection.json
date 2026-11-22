@@ -1,0 +1,1341 @@
+{
+  "info": {
+    "_postman_id": "6f1d2a4e-8b3c-4e57-9a10-2c7d5e9b0a11",
+    "name": "UTS Pemrograman API",
+    "description": "Collection pengujian API kategori dan produk. Semua URL memakai {{baseUrl}} dari Environment. Jalankan dengan Collection Runner: folder 1 dan folder 2 harus hijau semua.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1-Alur Utama",
+      "description": "Skenario S01 sampai S15, dijalankan berurutan. Request POST menyimpan id baru ke environment lewat tab Tests (kategoriId, produkId, kategoriSementaraId). Nilai nama_kategori dan kode_produk memakai {{$timestamp}} supaya folder ini bisa dijalankan berulang kali pada database yang sudah diisi seed.",
+      "item": [
+        {
+          "name": "S01 - POST /api/kategori",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('S01: status 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('S01: respons sukses dan berisi id kategori', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('success');",
+                  "  pm.expect(json.data.id).to.be.a('number');",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "  pm.environment.set('kategoriId', pm.response.json().data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/kategori",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "kategori"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nama_kategori\": \"Kategori Uji {{$timestamp}}\",\n  \"deskripsi\": \"Kategori untuk pengujian\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "S02 - POST /api/produk dengan kategori_id = {{kategoriId}}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('S02: status 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('S02: deleted_at bernilai null', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.data.id).to.be.a('number');",
+                  "  pm.expect(json.data.deleted_at).to.eql(null);",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "  pm.environment.set('produkId', pm.response.json().data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/produk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produk"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kategori_id\": {{kategoriId}},\n  \"kode_produk\": \"UJI-{{$timestamp}}\",\n  \"nama_produk\": \"Produk Uji\",\n  \"harga\": 50000,\n  \"stok\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "S03 - GET /api/produk/{{produkId}}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('S03: status 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('S03: id sama dengan produkId', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.data.id).to.eql(Number(pm.environment.get('produkId')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/produk/{{produkId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produk",
+                "{{produkId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "S04 - GET /api/kategori/{{kategoriId}}/produk",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('S04: status 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('S04: count minimal 1 dan memuat produk S02', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.count).to.be.at.least(1);",
+                  "  pm.expect(json.data.some(p => p.id === Number(pm.environment.get('produkId')))).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/kategori/{{kategoriId}}/produk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "kategori",
+                "{{kategoriId}}",
+                "produk"
+              ]
+            }
+          }
+        },
+        {
+          "name": "S05 - PUT /api/produk/{{produkId}} dengan 5 field lengkap",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('S05: status 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('S05: seluruh field berubah sesuai body', function () {",
+                  "  const d = pm.response.json().data;",
+                  "  pm.expect(d.id).to.eql(Number(pm.environment.get('produkId')));",
+                  "  pm.expect(d.kategori_id).to.eql(Number(pm.environment.get('kategoriId')));",
+                  "  pm.expect(d.kode_produk).to.match(/^UJP-/);",
+                  "  pm.expect(d.nama_produk).to.eql('Produk Uji Diperbarui');",
+                  "  pm.expect(d.harga).to.eql(75000);",
+                  "  pm.expect(d.stok).to.eql(20);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/produk/{{produkId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produk",
+                "{{produkId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kategori_id\": {{kategoriId}},\n  \"kode_produk\": \"UJP-{{$timestamp}}\",\n  \"nama_produk\": \"Produk Uji Diperbarui\",\n  \"harga\": 75000,\n  \"stok\": 20\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "S06 - PATCH /api/produk/{{produkId}} body { \"stok\": 40 }",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('S06: status 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('S06: hanya stok yang berubah', function () {",
+                  "  const d = pm.response.json().data;",
+                  "  pm.expect(d.stok).to.eql(40);",
+                  "  pm.expect(d.nama_produk).to.eql('Produk Uji Diperbarui');",
+                  "  pm.expect(d.harga).to.eql(75000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/produk/{{produkId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produk",
+                "{{produkId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stok\": 40\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "S07 - DELETE /api/produk/{{produkId}} (soft delete)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('S07: status 204', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});",
+                  "pm.test('S07: tanpa body', function () {",
+                  "  pm.expect(pm.response.text()).to.eql('');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/produk/{{produkId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produk",
+                "{{produkId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "S08 - GET /api/produk/{{produkId}}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('S08: status 404', function () {",
+                  "  pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test('S08: data tersembunyi', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('error');",
+                  "  pm.expect(json.data).to.eql(undefined);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/produk/{{produkId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produk",
+                "{{produkId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "S09 - GET /api/produk",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('S09: status 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('S09: tidak memuat produkId', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.data.some(p => p.id === Number(pm.environment.get('produkId')))).to.eql(false);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/produk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produk"
+              ]
+            }
+          }
+        },
+        {
+          "name": "S10 - PATCH /api/produk/{{produkId}}/restore",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('S10: status 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('S10: deleted_at kembali null', function () {",
+                  "  const d = pm.response.json().data;",
+                  "  pm.expect(d.id).to.eql(Number(pm.environment.get('produkId')));",
+                  "  pm.expect(d.deleted_at).to.eql(null);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/produk/{{produkId}}/restore",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produk",
+                "{{produkId}}",
+                "restore"
+              ]
+            }
+          }
+        },
+        {
+          "name": "S11 - GET /api/produk/{{produkId}}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('S11: status 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('S11: data muncul lagi', function () {",
+                  "  const d = pm.response.json().data;",
+                  "  pm.expect(d.id).to.eql(Number(pm.environment.get('produkId')));",
+                  "  pm.expect(d.deleted_at).to.eql(null);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/produk/{{produkId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produk",
+                "{{produkId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "S12 - DELETE /api/kategori/{{kategoriId}}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('S12: status 409', function () {",
+                  "  pm.response.to.have.status(409);",
+                  "});",
+                  "pm.test('S12: kategori masih dipakai produk', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('error');",
+                  "  pm.expect(json.message).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/kategori/{{kategoriId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "kategori",
+                "{{kategoriId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "S13 - POST /api/kategori (kategori sementara)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('S13: status 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('S13: berisi id kategori sementara', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.data.id).to.be.a('number');",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "  pm.environment.set('kategoriSementaraId', pm.response.json().data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/kategori",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "kategori"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nama_kategori\": \"Kategori Sementara {{$timestamp}}\",\n  \"deskripsi\": \"Kategori sementara untuk uji hard delete\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "S14 - DELETE /api/kategori/{{kategoriSementaraId}} (hard delete)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('S14: status 204', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});",
+                  "pm.test('S14: tanpa body', function () {",
+                  "  pm.expect(pm.response.text()).to.eql('');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/kategori/{{kategoriSementaraId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "kategori",
+                "{{kategoriSementaraId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "S15 - GET /api/kategori/{{kategoriSementaraId}}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('S15: status 404', function () {",
+                  "  pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test('S15: baris hilang permanen', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('error');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/kategori/{{kategoriSementaraId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "kategori",
+                "{{kategoriSementaraId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2-Skenario Error",
+      "description": "Skenario N01 sampai N14. Setiap request memeriksa kode status, dan isi respons: status bernilai \"error\" dan message tidak kosong.",
+      "item": [
+        {
+          "name": "N01 - POST /api/kategori body nama_kategori kosong",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('N01: status 400', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test('N01: respons berisi status error dan message tidak kosong', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('error');",
+                  "  pm.expect(json.message).to.be.a('string').and.not.empty;",
+                  "  pm.expect(json.errors).to.be.an('array').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/kategori",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "kategori"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nama_kategori\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "N02 - POST /api/kategori dengan nama_kategori yang sudah ada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('N02: status 409', function () {",
+                  "  pm.response.to.have.status(409);",
+                  "});",
+                  "pm.test('N02: respons berisi status error dan message tidak kosong', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('error');",
+                  "  pm.expect(json.message).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/kategori",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "kategori"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nama_kategori\": \"Elektronik\",\n  \"deskripsi\": \"Duplikat\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "N03 - POST /api/produk body harga = -5 dan stok = \"banyak\"",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('N03: status 400', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test('N03: respons berisi status error dan message tidak kosong', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('error');",
+                  "  pm.expect(json.message).to.be.a('string').and.not.empty;",
+                  "  pm.expect(json.errors).to.be.an('array').and.not.empty;",
+                  "});",
+                  "pm.test('N03: errors berisi dua pesan', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.errors).to.have.lengthOf(2);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/produk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produk"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kategori_id\": {{kategoriId}},\n  \"kode_produk\": \"ERR-{{$timestamp}}\",\n  \"nama_produk\": \"Produk Error\",\n  \"harga\": -5,\n  \"stok\": \"banyak\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "N04 - POST /api/produk dengan kategori_id = 99999",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('N04: status 422', function () {",
+                  "  pm.response.to.have.status(422);",
+                  "});",
+                  "pm.test('N04: respons berisi status error dan message tidak kosong', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('error');",
+                  "  pm.expect(json.message).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/produk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produk"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kategori_id\": 99999,\n  \"kode_produk\": \"ERR-{{$timestamp}}\",\n  \"nama_produk\": \"Produk Error\",\n  \"harga\": 1000,\n  \"stok\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "N05 - POST /api/produk dengan kode_produk milik produk lain",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('N05: status 409', function () {",
+                  "  pm.response.to.have.status(409);",
+                  "});",
+                  "pm.test('N05: respons berisi status error dan message tidak kosong', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('error');",
+                  "  pm.expect(json.message).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/produk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produk"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kategori_id\": {{kategoriId}},\n  \"kode_produk\": \"ELK-001\",\n  \"nama_produk\": \"Kode Kembar\",\n  \"harga\": 1000,\n  \"stok\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "N06 - PUT /api/produk/{{produkId}} body { \"nama_produk\": \"Baru\" }",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('N06: status 400', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test('N06: respons berisi status error dan message tidak kosong', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('error');",
+                  "  pm.expect(json.message).to.be.a('string').and.not.empty;",
+                  "  pm.expect(json.errors).to.be.an('array').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/produk/{{produkId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produk",
+                "{{produkId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nama_produk\": \"Baru\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "N07 - PATCH /api/produk/{{produkId}} body {}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('N07: status 400', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test('N07: respons berisi status error dan message tidak kosong', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('error');",
+                  "  pm.expect(json.message).to.be.a('string').and.not.empty;",
+                  "  pm.expect(json.errors).to.be.an('array').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/produk/{{produkId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produk",
+                "{{produkId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "N08 - PATCH /api/produk/{{produkId}} dengan kode_produk milik produk lain",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('N08: status 409', function () {",
+                  "  pm.response.to.have.status(409);",
+                  "});",
+                  "pm.test('N08: respons berisi status error dan message tidak kosong', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('error');",
+                  "  pm.expect(json.message).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/produk/{{produkId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produk",
+                "{{produkId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kode_produk\": \"ELK-001\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "N09 - GET /api/produk/abc",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('N09: status 400', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test('N09: respons berisi status error dan message tidak kosong', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('error');",
+                  "  pm.expect(json.message).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/produk/abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produk",
+                "abc"
+              ]
+            }
+          }
+        },
+        {
+          "name": "N10 - GET /api/produk/99999",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('N10: status 404', function () {",
+                  "  pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test('N10: respons berisi status error dan message tidak kosong', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('error');",
+                  "  pm.expect(json.message).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/produk/99999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produk",
+                "99999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "N11 - DELETE /api/produk/99999",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('N11: status 404', function () {",
+                  "  pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test('N11: respons berisi status error dan message tidak kosong', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('error');",
+                  "  pm.expect(json.message).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/produk/99999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produk",
+                "99999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "N12a - DELETE /api/produk/{{produkId}} (pertama, persiapan)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('N12a: status 204', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/produk/{{produkId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produk",
+                "{{produkId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "N12b - DELETE /api/produk/{{produkId}} (kedua, diperiksa)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('N12b: status 404', function () {",
+                  "  pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test('N12b: respons berisi status error dan message tidak kosong', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('error');",
+                  "  pm.expect(json.message).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/produk/{{produkId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produk",
+                "{{produkId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "N13a - PATCH /api/produk/{{produkId}}/restore (pertama, persiapan)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('N13a: status 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/produk/{{produkId}}/restore",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produk",
+                "{{produkId}}",
+                "restore"
+              ]
+            }
+          }
+        },
+        {
+          "name": "N13b - PATCH /api/produk/{{produkId}}/restore (kedua, diperiksa)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('N13b: status 404', function () {",
+                  "  pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test('N13b: respons berisi status error dan message tidak kosong', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('error');",
+                  "  pm.expect(json.message).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/produk/{{produkId}}/restore",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produk",
+                "{{produkId}}",
+                "restore"
+              ]
+            }
+          }
+        },
+        {
+          "name": "N14 - POST /api/produk dengan body JSON rusak (koma berlebih di akhir)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('N14: status 400', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test('N14: respons berisi status error dan message tidak kosong', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('error');",
+                  "  pm.expect(json.message).to.be.a('string').and.not.empty;",
+                  "});",
+                  "pm.test('N14: pesan JSON tidak valid', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.message).to.eql('JSON tidak valid');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/produk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "produk"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kategori_id\": 1,\n  \"kode_produk\": \"RUSAK-001\",\n  \"nama_produk\": \"JSON Rusak\",\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3-Bukti Delete",
+      "description": "Bukti soft delete dan hard delete langsung di PostgreSQL (tangkapan layar SELECT setelah S07, S10, dan S14). Folder ini berisi catatan, bukan request ke API.",
+      "item": []
+    }
+  ]
+}
